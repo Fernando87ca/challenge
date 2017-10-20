@@ -8,8 +8,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
 import com.db.awmd.challenge.domain.Account;
+import com.db.awmd.challenge.domain.Transfer;
+import com.db.awmd.challenge.domain.TransferRequest;
+import com.db.awmd.challenge.enums.Status;
+import com.db.awmd.challenge.repository.TransferRepository;
 import com.db.awmd.challenge.service.AccountsService;
 import java.math.BigDecimal;
+import java.util.Map;
 
 import com.db.awmd.challenge.service.NotificationService;
 import com.db.awmd.challenge.service.TransferService;
@@ -43,6 +48,9 @@ public class AccountsControllerTest {
   @Autowired
   private TransferService transferService;
 
+  @Autowired
+  private TransferRepository transferRepository;
+
   @MockBean
   private NotificationService notificationService;
 
@@ -52,6 +60,7 @@ public class AccountsControllerTest {
 
     // Reset the existing accounts before each test.
     accountsService.getAccountsRepository().clearAccounts();
+    transferRepository.clearTransfers();
   }
 
   @Test
@@ -135,6 +144,16 @@ public class AccountsControllerTest {
 
     verify(this.notificationService,atLeastOnce()).notifyAboutTransfer(eq(accountFrom), anyString());
     verify(this.notificationService,atLeastOnce()).notifyAboutTransfer(eq(accountTo), anyString());
+
+    assertThat(transferRepository.getAllTransfers().size()).isEqualTo(1);
+
+    Map<String, Transfer> allTransfers = this.transferRepository.getAllTransfers();
+    final String key = allTransfers.entrySet().iterator().next().getKey();
+    final TransferRequest transfer = allTransfers.get(key).getTransfer();
+    assertThat(transfer.getAccountFromId()).isEqualTo("1");
+    assertThat(transfer.getAccountToId()).isEqualTo("2");
+    assertThat(transfer.getAmountTransfer()).isEqualTo(new BigDecimal(90));
+    assertThat(allTransfers.get(key).getStatus()).isEqualTo(Status.COMPLETED);
   }
 
   @Test
@@ -147,6 +166,24 @@ public class AccountsControllerTest {
 
     this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
             .content("{\"from\":\"1\",\"to\":\"2\",\"amount\":90}")).andExpect(status().isBadRequest());
+
+    Account accountFrom = accountsService.getAccount("1");
+    assertThat(accountFrom.getAccountId()).isEqualTo("1");
+    assertThat(accountFrom.getBalance()).isEqualByComparingTo("10");
+
+    Account accountTo = accountsService.getAccount("2");
+    assertThat(accountTo.getAccountId()).isEqualTo("2");
+    assertThat(accountTo.getBalance()).isEqualByComparingTo("100");
+
+    assertThat(transferRepository.getAllTransfers().size()).isEqualTo(1);
+
+    Map<String, Transfer> allTransfers = this.transferRepository.getAllTransfers();
+    final String key = allTransfers.entrySet().iterator().next().getKey();
+    final TransferRequest transfer = allTransfers.get(key).getTransfer();
+    assertThat(transfer.getAccountFromId()).isEqualTo("1");
+    assertThat(transfer.getAccountToId()).isEqualTo("2");
+    assertThat(transfer.getAmountTransfer()).isEqualTo(new BigDecimal(90));
+    assertThat(allTransfers.get(key).getStatus()).isEqualTo(Status.ERROR);
   }
 
   @Test
@@ -159,6 +196,16 @@ public class AccountsControllerTest {
 
     this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
             .content("{\"fail\":\"1\",\"fail\":\"2\",\"amount\":90}")).andExpect(status().isBadRequest());
+
+    Account accountFrom = accountsService.getAccount("1");
+    assertThat(accountFrom.getAccountId()).isEqualTo("1");
+    assertThat(accountFrom.getBalance()).isEqualByComparingTo("100");
+
+    Account accountTo = accountsService.getAccount("2");
+    assertThat(accountTo.getAccountId()).isEqualTo("2");
+    assertThat(accountTo.getBalance()).isEqualByComparingTo("100");
+
+    assertThat(transferRepository.getAllTransfers().size()).isEqualTo(0);
   }
 
 
@@ -172,6 +219,16 @@ public class AccountsControllerTest {
 
     this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
             .content("{\"to\":\"2\",\"amount\":90}")).andExpect(status().isBadRequest());
+
+    Account accountFrom = accountsService.getAccount("1");
+    assertThat(accountFrom.getAccountId()).isEqualTo("1");
+    assertThat(accountFrom.getBalance()).isEqualByComparingTo("100");
+
+    Account accountTo = accountsService.getAccount("2");
+    assertThat(accountTo.getAccountId()).isEqualTo("2");
+    assertThat(accountTo.getBalance()).isEqualByComparingTo("100");
+
+    assertThat(transferRepository.getAllTransfers().size()).isEqualTo(0);
   }
 
   @Test
@@ -184,6 +241,16 @@ public class AccountsControllerTest {
 
     this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
             .content("{\"from\":\"1\",\"amount\":90}")).andExpect(status().isBadRequest());
+
+    Account accountFrom = accountsService.getAccount("1");
+    assertThat(accountFrom.getAccountId()).isEqualTo("1");
+    assertThat(accountFrom.getBalance()).isEqualByComparingTo("100");
+
+    Account accountTo = accountsService.getAccount("2");
+    assertThat(accountTo.getAccountId()).isEqualTo("2");
+    assertThat(accountTo.getBalance()).isEqualByComparingTo("100");
+
+    assertThat(transferRepository.getAllTransfers().size()).isEqualTo(0);
   }
 
   @Test
@@ -196,6 +263,16 @@ public class AccountsControllerTest {
 
     this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
             .content("{\"from\":\"1\",\"to\":\"2\",\"amount\":-90}")).andExpect(status().isBadRequest());
+
+    Account accountFrom = accountsService.getAccount("1");
+    assertThat(accountFrom.getAccountId()).isEqualTo("1");
+    assertThat(accountFrom.getBalance()).isEqualByComparingTo("100");
+
+    Account accountTo = accountsService.getAccount("2");
+    assertThat(accountTo.getAccountId()).isEqualTo("2");
+    assertThat(accountTo.getBalance()).isEqualByComparingTo("100");
+
+    assertThat(transferRepository.getAllTransfers().size()).isEqualTo(0);
   }
 
   @Test
@@ -208,6 +285,22 @@ public class AccountsControllerTest {
 
     this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
             .content("{\"from\":\"3\",\"to\":\"2\",\"amount\":90}")).andExpect(status().isBadRequest());
+
+    Account accountFrom = accountsService.getAccount("1");
+    assertThat(accountFrom.getAccountId()).isEqualTo("1");
+    assertThat(accountFrom.getBalance()).isEqualByComparingTo("100");
+
+    Account accountTo = accountsService.getAccount("2");
+    assertThat(accountTo.getAccountId()).isEqualTo("2");
+    assertThat(accountTo.getBalance()).isEqualByComparingTo("100");
+
+    Map<String, Transfer> allTransfers = this.transferRepository.getAllTransfers();
+    final String key = allTransfers.entrySet().iterator().next().getKey();
+    final TransferRequest transfer = allTransfers.get(key).getTransfer();
+    assertThat(transfer.getAccountFromId()).isEqualTo("3");
+    assertThat(transfer.getAccountToId()).isEqualTo("2");
+    assertThat(transfer.getAmountTransfer()).isEqualTo(new BigDecimal(90));
+    assertThat(allTransfers.get(key).getStatus()).isEqualTo(Status.ERROR);
   }
 
   @Test
@@ -220,5 +313,21 @@ public class AccountsControllerTest {
 
     this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
             .content("{\"from\":\"1\",\"to\":\"3\",\"amount\":90}")).andExpect(status().isBadRequest());
+
+    Account accountFrom = accountsService.getAccount("1");
+    assertThat(accountFrom.getAccountId()).isEqualTo("1");
+    assertThat(accountFrom.getBalance()).isEqualByComparingTo("100");
+
+    Account accountTo = accountsService.getAccount("2");
+    assertThat(accountTo.getAccountId()).isEqualTo("2");
+    assertThat(accountTo.getBalance()).isEqualByComparingTo("100");
+
+    Map<String, Transfer> allTransfers = this.transferRepository.getAllTransfers();
+    final String key = allTransfers.entrySet().iterator().next().getKey();
+    final TransferRequest transfer = allTransfers.get(key).getTransfer();
+    assertThat(transfer.getAccountFromId()).isEqualTo("1");
+    assertThat(transfer.getAccountToId()).isEqualTo("3");
+    assertThat(transfer.getAmountTransfer()).isEqualTo(new BigDecimal(90));
+    assertThat(allTransfers.get(key).getStatus()).isEqualTo(Status.ERROR);
   }
 }

@@ -5,6 +5,7 @@ import com.db.awmd.challenge.domain.TransferRequest;
 import com.db.awmd.challenge.exception.AccountNotFoundException;
 import com.db.awmd.challenge.exception.DuplicateAccountIdException;
 import com.db.awmd.challenge.exception.InsufficientAmountException;
+import com.db.awmd.challenge.exception.TransferNotCompletedException;
 import com.db.awmd.challenge.service.AccountsService;
 import javax.validation.Valid;
 
@@ -57,15 +58,13 @@ public class AccountsController {
 
   @PostMapping(path = "/transfer",
           consumes = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity transfer(@RequestBody @Valid TransferRequest transferRequest) throws InsufficientAmountException, AccountNotFoundException {
+  public ResponseEntity transfer(@RequestBody @Valid TransferRequest transferRequest) {
+    log.info("Transfer Request for {}", transferRequest);
     try {
       transferService.makeTransfer(transferRequest);
       return new ResponseEntity(HttpStatus.OK);
-    } catch (InsufficientAmountException e) {
-      return ResponseEntity
-              .status(HttpStatus.BAD_REQUEST)
-              .body(e.getMessage());
-    } catch (AccountNotFoundException e) {
+    } catch (InsufficientAmountException | AccountNotFoundException | TransferNotCompletedException e) {
+      log.info("Transfer Request error for {}", transferRequest);
       return ResponseEntity
               .status(HttpStatus.BAD_REQUEST)
               .body(e.getMessage());

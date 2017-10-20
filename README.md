@@ -1,23 +1,39 @@
 The main purpose of the exercise was not implement the micro-service in production, however if we would move the following code into production we should implement some considerations in order to be compliant:
 
-## Accounts should be allocated in a Real Database, not in memory:
+## Persistence in Database
 
-In the real scenario there is not enough having the accounts in memory, we should need a real database to store the Account information, with this new premise we could needed:
+For this purpose we are implementing the persistence in memory. For the real scenario and be able to deploy transfer service on production we should need add a real persistence on Database.
 
-* Authorization and Authentication services.
-* Communication between database and micro-service should be secure.
-* it would be necessary to add Audit, in order to keep track all the user movements.
-* RxJava Observables in order to save the transfers in asynchronous way.
+Adding persistence into Database, will add extra complexity at whole system, and should be considered implement the following  points in order to accredit consistency system.
 
+#### Encrypt and secure the transfers
 
-## Transfers Repository:
+Data transfer between database and API should be secured.
 
-To implement the api in production we will need a Transfer repository, another micro-service could read from transaction repository at the end of day and check if all the accounts are in a consistance status, to implement this, we should need on this micro-service the following considerations:
+## Authorization and Authentication
 
-* Log transfer store.
-* Notification process in queue after each success transfer
+We should implement a service to Authenticate and Authorize a user in order to be sure that only the valid users can use our transfer system.
+For this purpose, we could use JWT and create a security library and using interceptors inject before each call.
 
-## Continuous Integration process:
+## Audit
 
+For this exercise we create a Transfer repository in memory as way to audit and store the transfers that the users are performing.
 
-As Micro-service architecture, we should need implement a continuous integration pipeline in order to provide new functionality, quick fix or new versions of the diferents micro-services that we are generating
+In the real scenario this repository as the same case than accounts should be stored into Database. Transfer service could write into a queue all the events that transfer is performing.
+Another service should treat theses events and check the consistency of the transfers.
+
+## Containers and Continuous integration / delivery pipeline
+
+A continuous integration / delivery pipeline should be used to ensure code quality and continuous improvement of the base code.
+
+#### Execution pipeline
+
+Execution pipeline (jenkins, bamboo, etc...) should be necessary for execute all the task that CI include, execution pipeline needs guarantee quality of the code.
+
+#### Container system
+
+A container system (docker) could be implemented to easy deployment and scalability of services.
+
+#### Code Analysis Tool
+
+Code analysis tool (Sonar) must be needed to ensure the correct quality of the code.

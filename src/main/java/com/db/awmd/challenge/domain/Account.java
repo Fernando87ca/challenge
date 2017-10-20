@@ -6,10 +6,11 @@ import java.math.BigDecimal;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
-import org.hibernate.validator.constraints.NotBlank;
+import lombok.experimental.Accessors;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
+@Accessors(chain = true)
 public class Account {
 
   @NotNull
